@@ -1,5 +1,5 @@
 #include <LiquidCrystal_I2C.h>
-
+oioi
 // --- Mapeamento de Hardware ---
 #define but1  5          //botão 1 no pino digital 5
 #define but2  6          //botão 2 no pino digital 6
