@@ -1,0 +1,477 @@
+#include <LiquidCrystal_I2C.h>
+
+// --- Mapeamento de Hardware ---
+#define but1  5          //botão 1 no pino digital 5
+#define but2  6          //botão 2 no pino digital 6
+#define but3  7          //botão 3 no pino digital 7
+#define but4  4          //botão 4 no pino digital 4
+#define but5  3          //botão 5 no pino digital 3
+#define but6  2          //botão 6 no pino digital 2
+#define led1  8          //LED1 no pino digital 8
+#define led2  9          //LED2 no pino digital 9
+#define led3  10         //LED3 no pino digital 10
+#define led4  11         //LED4 no pino digital 11
+#define led5  12         //LED5 no pino digital 12
+#define ledBut3 13       //LED para o botão 3 no pino digital 13
+
+
+// --- Variáveis Globais ---
+int ledState1 = LOW;        //armazena o estado atual do LED1
+int ledState2 = LOW;        //armazena o estado atual do LED2
+int ledState3 = LOW;        //armazena o estado atual do LED3
+int ledState4 = LOW;        //armazena o estado atual do LED4
+int ledState5 = LOW;        //armazena o estado atual do LED5
+int ledBut3State = LOW;     //armazena o estado atual do LED do botão 3
+int buttonState1;           //leitura atual do botão 1
+int buttonState2;           //leitura atual do botão 2
+int buttonState3;           //leitura atual do botão 3
+int buttonState4;           //leitura atual do botão 4
+int buttonState5;           //leitura atual do botão 5
+int buttonState6;           //leitura atual do botão 6
+int lastButtonState1 = LOW; //estado anterior do botão 1
+int lastButtonState2 = LOW; //estado anterior do botão 2
+int lastButtonState3 = LOW; //estado anterior do botão 3
+int lastButtonState4 = LOW; //estado anterior do botão 4
+int lastButtonState5 = LOW; //estado anterior do botão 5
+int lastButtonState6 = LOW; //estado anterior do botão 6
+
+unsigned long lastDebounceTime = 0;   //
+long debounceDelay = 50;           // Tempo de debounce em milissegundos
+
+unsigned long randNumber;             //armazena o número aleatório
+unsigned long minRandomNumber = 1000;     
+unsigned long maxRandomNumber = 2000;    
+
+unsigned long time1, time2;
+int button3Pressed = LOW;
+int printcount = 0;
+
+int takeReading = LOW;
+
+// auxiliares para leitura dos botões
+int reading1;
+int reading2;
+int reading3;
+int reading4;
+int reading5;
+int reading6;
+
+int activeLed; // variável para armazenar qual LED está ativo
+
+int numRodadas = 5; // número de rodadas
+float temposDeReacao[5]; // array para armazenar os tempos de reação
+
+LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7,3, POSITIVE);
+
+void setup()
+{
+  lcd.begin (16,2);
+    pinMode(but1, INPUT); //entrada botão 1
+    pinMode(but2, INPUT); //entrada botão 2
+    pinMode(but3, INPUT); //entrada botão 3
+    pinMode(but4, INPUT); //entrada botão 4
+    pinMode(but5, INPUT); //entrada botão 5
+    pinMode(but6, INPUT); //entrada botão 6
+    pinMode(led1, OUTPUT); //saída LED1
+    pinMode(led2, OUTPUT); //saída LED2
+    pinMode(led3, OUTPUT); //saída LED3
+    pinMode(led4, OUTPUT); //saída LED4
+    pinMode(led5, OUTPUT); //saída LED5
+    pinMode(ledBut3, OUTPUT); //saída LED do botão 3
+
+    Serial.begin(9600);    //inicializa Serial com 9600 baud rate
+
+    // Inicializa leds
+    digitalWrite(led1, ledState1);
+    digitalWrite(led2, ledState2);
+    digitalWrite(led3, ledState3);
+    digitalWrite(led4, ledState4);
+    digitalWrite(led5, ledState5);
+    digitalWrite(ledBut3, ledBut3State);
+
+    // Gera números aleatórios pelo ruído da entrada analógica
+    randomSeed(analogRead(0));
+}
+
+void loop() 
+{
+    // Lê o botão 3
+    reading3 = digitalRead(but3);
+
+    if (printcount == 0)
+    {
+        Serial.println("Pressione But3 quando estiver pronto");
+        digitalWrite(ledBut3, HIGH); // Acende o LED do botão 3
+        ledBut3State = HIGH;
+        printcount = 1;
+        takeReading = LOW;    // impede leitura dos botões
+        lcd.clear();
+        lcd.setBacklight(HIGH);
+        lcd.setCursor(1,0);
+        lcd.print("PRESSI");
+        lcd.setCursor(0,1);
+        lcd.print("botao INICIAR");
+    }
+
+    // Testa um novo pressionar do botão 3, para reiniciar jogo
+    if (reading3 == HIGH && button3Pressed == LOW) 
+    {
+        button3Pressed = HIGH;
+        Serial.println("Pronto Para Iniciar...");
+        digitalWrite(ledBut3, LOW); // Apaga o LED do botão 3
+        ledBut3State = LOW;
+        takeReading = HIGH;
+        lcd.clear();
+        lcd.setBacklight(HIGH);
+        lcd.setCursor(1,0);
+        lcd.print("Pronto para");
+        lcd.setCursor(0,1);
+        lcd.print("iniciar...");
+
+        // Joga 5 rodadas
+        for (int rodada = 0; rodada < numRodadas; rodada++)
+        {
+            // apaga LEDs
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, LOW);
+            digitalWrite(led4, LOW);
+            digitalWrite(led5, LOW);
+
+            // Gera um tempo de espera aleatório
+            randNumber = random(minRandomNumber, maxRandomNumber); 
+            delay(randNumber);
+
+            // Liga um LED aleatório
+            activeLed = random(5);
+            Serial.print("Valendo! LED aceso: ");
+            lcd.clear();
+            lcd.setBacklight(HIGH);
+            lcd.setCursor(1,0);
+            lcd.print("Valendo!");
+            //lcd.setCursor(0,1);
+            //lcd.print("iniciar...");
+            switch (activeLed)
+            {
+                case 0:
+                    digitalWrite(led1, HIGH);
+                    lcd.clear();
+                    lcd.setBacklight(HIGH);
+                    lcd.setCursor(1,0);
+                    lcd.print("  LED aceso");
+                    lcd.setCursor(0,1);
+                    lcd.print("   vermelho");
+                    Serial.println("Vermelho");
+                    break;
+                case 1:
+                    digitalWrite(led2, HIGH);
+                    lcd.clear();
+                    lcd.setBacklight(HIGH);
+                    lcd.setCursor(1,0);
+                    lcd.print("  LED aceso");
+                    lcd.setCursor(0,1);
+                    lcd.print("      azul");
+                    Serial.println("Azul");
+                    break;
+                case 2:
+                    digitalWrite(led3, HIGH);
+                    lcd.clear();
+                    lcd.setBacklight(HIGH);
+                    lcd.setCursor(1,0);
+                    lcd.print("  LED aceso");
+                    lcd.setCursor(0,1);
+                    lcd.print("     verde");
+                    Serial.println("Verde");
+                    break;
+                case 3:
+                    digitalWrite(led4, HIGH);
+                    lcd.clear();
+                    lcd.setBacklight(HIGH);
+                    lcd.setCursor(1,0);
+                    lcd.print("  LED aceso");
+                    lcd.setCursor(0,1);
+                    lcd.print("    amarelo");
+                    Serial.println("Amarelo");
+                    break;
+                case 4:
+                    digitalWrite(led5, HIGH);
+                    lcd.clear();
+                    lcd.setBacklight(HIGH);
+                    lcd.setCursor(1,0);
+                    lcd.print("  LED aceso");
+                    lcd.setCursor(0,1);
+                    lcd.print("     branco");
+                    Serial.println("Branco");
+                    break;
+            }
+            time1 = micros(); // Captura o tempo em us
+
+            // Espera a resposta do jogador
+            boolean rodando = true;
+            while (rodando)
+            {
+                // Testa botões
+                if (takeReading == HIGH)
+                {
+                    // Lê o botão correspondente ao LED aceso
+                    switch (activeLed)
+                    {
+                        case 0:
+                            reading1 = digitalRead(but1);
+                            break;
+                        case 1:
+                            reading2 = digitalRead(but2);
+                            break;
+                        case 2:
+                            reading4 = digitalRead(but4);
+                            break;
+                        case 3:
+                            reading5 = digitalRead(but5);
+                            break;
+                        case 4:
+                            reading6 = digitalRead(but6);
+                            break;
+                    }
+                }
+
+                // Se os botões forem pressionados ou causarem ruído
+                if (reading1 != lastButtonState1 || reading2 != lastButtonState2 || reading3 != lastButtonState3 || reading4 != lastButtonState4 || reading5 != lastButtonState5 || reading6 != lastButtonState6) 
+                {
+                    // Reinicia tempo de bounce
+                    lastDebounceTime = millis();
+                }
+
+                if ((millis() - lastDebounceTime) > debounceDelay) 
+                {
+                    // Testa a mudança de estado dos botões
+                    if (reading1 != buttonState1)
+                    {
+                        buttonState1 = reading1;
+
+                        if (buttonState1 == HIGH)
+                        {
+                            if (activeLed == 0)
+                            {
+                                // Imprime tempo de reação e apaga o LED
+                                time2 = micros();
+                                float reactionTime = (time2 - time1) / 1000000.0; // Tempo de reação em segundos
+                                temposDeReacao[rodada] = reactionTime; // Armazena o tempo de reação
+                                Serial.print("Seu tempo de reacao eh: ");
+                                Serial.print(reactionTime, 6); // Imprime o tempo com 6 casas decimais
+                                Serial.println(" segundos");
+                                lcd.clear();
+                                lcd.setBacklight(HIGH);
+                                lcd.setCursor(1,0);
+                                lcd.print("tempo de reacao:");
+                                lcd.setCursor(0,1);
+                                lcd.print(reactionTime, 5);
+                                lcd.print(" segundos");
+                                if (reactionTime < 0.5)
+                                {
+                                    Serial.println("Excelente tempo!");
+                                }
+                                digitalWrite(led1, LOW); // Apaga o LED
+                                rodando = false; // Sai do loop
+                            }
+                            else
+                            {
+                                Serial.println("Botao Errado!"); // Mensagem de erro
+                            }
+                        }
+                    }
+                    if (reading2 != buttonState2)
+                    {
+                        buttonState2 = reading2;
+
+                        if (buttonState2 == HIGH)
+                        {
+                            if (activeLed == 1)
+                            {
+                                // Imprime tempo de reação e apaga o LED
+                                time2 = micros();
+                                float reactionTime = (time2 - time1) / 1000000.0;
+                                temposDeReacao[rodada] = reactionTime;
+                                Serial.print("Seu tempo de reacao eh: ");
+                                Serial.print(reactionTime, 6);
+                                Serial.println(" segundos");
+                                lcd.clear();
+                                lcd.setBacklight(HIGH);
+                                lcd.setCursor(1,0);
+                                lcd.print("tempo de reacao:");
+                                lcd.setCursor(0,1);
+                                lcd.print(reactionTime, 5);
+                                lcd.print(" segundos");
+                                if (reactionTime < 0.5)
+                                {
+                                    Serial.println("Excelente tempo!");
+                                }
+                                digitalWrite(led2, LOW);
+                                rodando = false;
+                            }
+                            else
+                            {
+                                Serial.println("Botao Errado!");
+                            }
+                        }
+                    }
+                    if (reading4 != buttonState4)
+                    {
+                        buttonState4 = reading4;
+
+                        if (buttonState4 == HIGH)
+                        {
+                            if (activeLed == 2)
+                            {
+                                // Imprime tempo de reação e apaga o LED
+                                time2 = micros();
+                                float reactionTime = (time2 - time1) / 1000000.0;
+                                temposDeReacao[rodada] = reactionTime;
+                                Serial.print("Seu tempo de reacao eh: ");
+                                Serial.print(reactionTime, 6);
+                                Serial.println(" segundos");
+                                lcd.clear();
+                                lcd.setBacklight(HIGH);
+                                lcd.setCursor(1,0);
+                                lcd.print("tempo de reacao:");
+                                lcd.setCursor(0,1);
+                                lcd.print(reactionTime, 5);
+                                lcd.print(" segundos");
+                                if (reactionTime < 0.5)
+                                {
+                                    Serial.println("Excelente tempo!");
+                                }
+                                digitalWrite(led3, LOW);
+                                rodando = false;
+                            }
+                            else
+                            {
+                                Serial.println("Botao Errado!");
+                            }
+                        }
+                    }
+                    if (reading5 != buttonState5)
+                    {
+                        buttonState5 = reading5;
+
+                        if (buttonState5 == HIGH)
+                        {
+                            if (activeLed == 3)
+                            {
+                                // Imprime tempo de reação e apaga o LED
+                                time2 = micros();
+                                float reactionTime = (time2 - time1) / 1000000.0;
+                                temposDeReacao[rodada] = reactionTime;
+                                Serial.print("Seu tempo de reacao eh: ");
+                                Serial.print(reactionTime, 6);
+                                Serial.println(" segundos");
+                                lcd.clear();
+                                lcd.setBacklight(HIGH);
+                                lcd.setCursor(1,0);
+                                lcd.print("tempo de reacao:");
+                                lcd.setCursor(0,1);
+                                lcd.print(reactionTime, 5);
+                                lcd.print(" segundos");
+                                if (reactionTime < 0.5)
+                                {
+                                    Serial.println("Excelente tempo!");
+                                }
+                                digitalWrite(led4, LOW);
+                                rodando = false;
+                            }
+                            else
+                            {
+                                Serial.println("Botao Errado!");
+                            }
+                        }
+                    }
+                    if (reading6 != buttonState6)
+                    {
+                        buttonState6 = reading6;
+
+                        if (buttonState6 == HIGH)
+                        {
+                            if (activeLed == 4)
+                            {
+                                // Imprime tempo de reação e apaga o LED
+                                time2 = micros();
+                                float reactionTime = (time2 - time1) / 1000000.0;
+                                temposDeReacao[rodada] = reactionTime;
+                                Serial.print("Seu tempo de reacao eh: ");
+                                Serial.print(reactionTime, 6);
+                                Serial.println(" segundos");
+                                lcd.clear();
+                                lcd.setBacklight(HIGH);
+                                lcd.setCursor(1,0);
+                                lcd.print("tempo de reacao:");
+                                lcd.setCursor(0,1);
+                                lcd.print(reactionTime, 5);
+                                lcd.print(" segundos");
+                                if (reactionTime < 0.5)
+                                {
+                                    Serial.println("Excelente tempo!");
+                                }
+                                digitalWrite(led5, LOW);
+                                rodando = false;
+                            }
+                            else
+                            {
+                                Serial.println("Botao Errado!");
+                            }
+                        }
+                    }
+                }
+
+                // Salva o estado de leitura anterior
+                lastButtonState1 = reading1;
+                lastButtonState2 = reading2;
+                lastButtonState3 = reading3;
+                lastButtonState4 = reading4;
+                lastButtonState5 = reading5;
+                lastButtonState6 = reading6;
+            }
+
+            delay(random(1000, 2000)); // Delay entre rodadas de 1 a 2 segundos
+        }
+
+        // Calcula a média dos tempos de reação
+        float somaTempos = 0;
+        for (int i = 0; i < numRodadas; i++)
+        {
+            somaTempos += temposDeReacao[i];
+        }
+        float mediaTempoReacao = somaTempos / numRodadas;
+        Serial.print("Tempo médio de reação: ");
+        Serial.print(mediaTempoReacao, 6);
+        Serial.println(" segundos");
+        lcd.clear();
+        lcd.setBacklight(HIGH);
+        lcd.setCursor(1,0);
+        lcd.print("TEMPO MEDIO:");
+        lcd.setCursor(0,1);
+        lcd.print(mediaTempoReacao, 5);
+        lcd.print(" SEGUNDOS");
+        delay(10000);
+
+        // Define pontuação
+        if (mediaTempoReacao < 0.5)
+        {
+            Serial.println("Parabéns! Você ganhou o troféu de Ouro!");
+        }
+        else if (mediaTempoReacao < 1)
+        {
+            Serial.println("Parabéns! Você ganhou o troféu de Prata!");
+        }
+        else if (mediaTempoReacao < 3)
+        {
+            Serial.println("Parabéns! Você ganhou o troféu de Bronze!");
+        }
+        else
+        {
+            Serial.println("Você perdeu! Tente novamente.");
+        }
+
+        // Reinicia o jogo
+        printcount = 0;
+        button3Pressed = LOW;
+    }
+}
