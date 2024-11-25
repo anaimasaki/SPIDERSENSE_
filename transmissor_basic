@@ -1,0 +1,33 @@
+#include <SPI.h>
+#include <nRF24L01.h>
+#include <RF24.h>
+
+// Configuração do nRF24L01
+#define CE_PIN 9
+#define CSN_PIN 10
+RF24 radio(CE_PIN, CSN_PIN);
+
+const byte address[6] = "000123"; // Endereço do canal
+
+void setup() {
+    Serial.begin(9600);
+    if (!radio.begin()) {
+        Serial.println("Erro ao iniciar o nRF24L01!");
+        while (1);
+    }
+    radio.openWritingPipe(address); // Configura o canal para enviar dados
+    radio.setPALevel(RF24_PA_LOW);  // Define a potência de transmissão
+    radio.stopListening();          // Configura como transmissor
+    Serial.println("Transmissor Pronto");
+}
+
+void loop() {
+    const char text[] = "Hello NRF24L01!";
+    bool success = radio.write(&text, sizeof(text)); // Envia a mensagem
+    if (success) {
+        Serial.println("Mensagem enviada com sucesso");
+    } else {
+        Serial.println("Erro ao enviar mensagem");
+    }
+    delay(1000); // Aguarda 1 segundo antes de enviar novamente
+}
